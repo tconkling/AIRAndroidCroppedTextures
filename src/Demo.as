@@ -1,14 +1,8 @@
-//
-// aciv
-
 package {
 
-import flash.display.Bitmap;
-import flash.display.Loader;
-import flash.events.Event;
-import flash.events.IOErrorEvent;
 import flash.filesystem.File;
-import flash.net.URLRequest;
+
+import react.Future;
 
 import starling.core.Starling;
 import starling.display.Image;
@@ -17,6 +11,8 @@ import starling.events.Touch;
 import starling.events.TouchEvent;
 import starling.events.TouchPhase;
 import starling.textures.Texture;
+
+import util.TextureLoader;
 
 public class Demo extends Sprite {
     public var resourceRoot :File = File.applicationDirectory;
@@ -34,26 +30,44 @@ public class Demo extends Sprite {
     }
 
     public function loadNextTexture () :void {
-        destroyCurTexture();
-        loadTexture(TEX_PATHS[_texIndex], onTextureLoaded);
-        _texIndex = (_texIndex + 1) % TEX_PATHS.length;
+        if (_loading) {
+            return;
+        }
+
+        disposeAllTextures();
+        Future.sequence(TEX_PATHS.map(function (path :String, ..._) :Future {
+            return TextureLoader.load(getUrl(path));
+        })).onFailure(function (err :*) :void {
+            _loading = false;
+            trace("Failed to load textures: " + err);
+        }).onSuccess(function (textures :Array) :void {
+            _loading = false;
+            disposeAllTextures();
+            _loadedTextures = textures;
+            displayTexture(textures[_texIndex]);
+            _texIndex = (_texIndex + 1) % TEX_PATHS.length;
+        });
     }
 
-    private function destroyCurTexture () :void {
+    private function disposeAllTextures () :void {
         if (_curImage != null) {
             _curImage.removeFromParent(true);
             _curImage = null;
         }
-        if (_curTex != null) {
-            _curTex.dispose();
-            _curTex = null;
+        if (_loadedTextures != null) {
+            for each (var tex :Texture in _loadedTextures) {
+                tex.dispose();
+            }
+            _loadedTextures = null;
         }
     }
 
-    private function onTextureLoaded (tex :Texture) :void {
-        destroyCurTexture();
+    private function displayTexture (tex :Texture) :void {
+        if (_curImage != null) {
+            _curImage.removeFromParent(true);
+            _curImage = null;
+        }
 
-        _curTex = tex;
         _curImage = new Image(tex);
 
         // Scale and center the image
@@ -65,24 +79,13 @@ public class Demo extends Sprite {
         addChild(_curImage);
     }
 
-    private function loadTexture (path :String, onSuccess :Function) :void {
-        var loader :Loader = new Loader();
-        loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR, function (err :Event) :void {
-            trace("Failed to load texture '" + path + "': " + err.toString());
-        });
-
-        loader.contentLoaderInfo.addEventListener(Event.INIT, function (e :Event) :void {
-            var bitmap :Bitmap = Bitmap(loader.content);
-            var tex :Texture = Texture.fromBitmapData(bitmap.bitmapData, false, false);
-            onSuccess(tex);
-        });
-
-        var url :String = this.resourceRoot.resolvePath(path).url;
-        loader.load(new URLRequest(url));
+    private function getUrl (path :String) :String {
+        return this.resourceRoot.resolvePath(path).url;
     }
 
+    private var _loading :Boolean;
     private var _texIndex :int = 0;
-    private var _curTex :Texture;
+    private var _loadedTextures :Array;
     private var _curImage :Image;
 
     private static const TEX_PATHS :Array = [
