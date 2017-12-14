@@ -1,0 +1,77 @@
+<?xml version="1.0" standalone="yes"?>
+<project name="AIRAndroidCroppedTextures" default="package-android" basedir="." xmlns:artifact="urn:maven-artifact-ant">
+  <!-- <property name="airsdk.dir" location="/pass_me_the_location_of_your_AIRSDK"/> -->
+  <property environment="env"/>
+  <property name="airsdk.dir" value="${env.AIR_HOME}"/>
+  <property name="deploy.dir" value="dist"/>
+  <property name="android.target" value="apk-captive-runtime"/>
+
+  <!-- Converts a fileset into a string of relative filenames to pass to adt. -->
+  <macrodef name="get-adt-resource-list">
+    <attribute name="property"/>
+    <attribute name="dir"/>
+    <element name="fileset-elements" optional="true"/>
+    <sequential>
+      <fileset id="@{property}.fileset" dir="@{dir}">
+        <fileset-elements/>
+      </fileset>
+      <pathconvert pathsep=" " property="@{property}" refid="@{property}.fileset">
+        <map from="@{dir}/" to=""/>
+      </pathconvert>
+    </sequential>
+  </macrodef>
+
+  <target name="clean">
+    <delete dir="${deploy.dir}" verbose="true"/>
+  </target>
+
+  <target name="swf" description="builds the swf">
+    <java jar="${airsdk.dir}/lib/mxmlc-cli.jar" failonerror="true" fork="true" maxmemory="1024m">
+      <jvmarg value="-Djava.awt.headless=true"/>
+      <arg value="+configname=air"/>
+      <arg value="-load-config=${airsdk.dir}/frameworks/air-config.xml"/>
+      <arg value="-verbose-stacktraces=true"/>
+      <arg value="-use-network=false"/>
+      <arg value="-compiler.library-path+=starling-framework-2.2.swc"/>
+      <arg value="-compiler.debug=true"/>
+      <arg value="-compiler.optimize=true"/>
+      <arg value="-compiler.omit-trace-statements=false"/>
+      <arg value="-source-path+=src"/>
+      <arg value="-output=${deploy.dir}/AIRAndroidCroppedTextures.swf"/>
+      <arg value="src/Main.as"/>
+    </java>
+  </target>
+
+  <target name="package-android" depends="swf" description="Packages the Android apk">
+    <!-- Stick our rsrc/ filenames in a property -->
+    <get-adt-resource-list property="resources.path" dir="rsrc">
+      <fileset-elements>
+        <include name="**/**"/>
+        <exclude name="**/.DS_Store"/>
+      </fileset-elements>
+    </get-adt-resource-list>
+
+    <java jar="${airsdk.dir}/lib/adt.jar" fork="true" failonerror="true">
+      <arg value="-package"/>
+      <arg value="-target"/> <arg value="${android.target}"/>
+
+      <!-- Signing options -->
+      <arg value="-storetype"/><arg value="pkcs12"/>
+      <arg value="-keystore"/><arg value="cert.p12"/>
+      <arg value="-storepass"/><arg value="other4-nonchalance"/>
+      <arg value="${deploy.dir}/AIRAndroidCroppedTextures.apk"/> <!-- output name -->
+      <arg value="airdesc.xml"/> <!-- app descriptor -->
+
+      <!-- Resources -->
+      <arg value="-C"/>
+      <arg value="rsrc"/>
+      <arg line="${resources.path}"/>
+
+      <!-- our swf -->
+      <arg value="-C"/>
+      <arg value="${deploy.dir}"/>
+      <arg value="AIRAndroidCroppedTextures.swf"/>
+    </java>
+  </target>
+
+</project>

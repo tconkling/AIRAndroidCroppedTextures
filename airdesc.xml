@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<application xmlns="http://ns.adobe.com/air/application/26.0">
+  <id>com.timconkling.AIRAndroidCroppedTextures</id>
+  <filename>AIRAndroidCroppedTextures</filename>
+  <name>AIRAndroidCroppedTextures</name>
+  <versionNumber>1</versionNumber>
+
+  <initialWindow>
+    <content>AIRAndroidCroppedTextures.swf</content>
+    <renderMode>direct</renderMode>
+    <aspectRatio>landscape</aspectRatio>
+    <autoOrients>true</autoOrients>
+    <fullScreen>true</fullScreen>
+    <visible>true</visible>
+  </initialWindow>
+
+  <!-- Android specific capabilities -->
+  <android>
+      <manifestAdditions>
+       <![CDATA[
+           <manifest android:installLocation="auto">
+               <uses-permission android:name="android.permission.INTERNET"/>
+               <uses-configuration android:reqFiveWayNav="true"/>
+               <supports-screens android:normalScreens="true"/>
+               <uses-feature android:required="true" android:name="android.hardware.touchscreen.multitouch"/>
+               <application android:enabled="true">
+                   <activity android:excludeFromRecents="false">
+                       <intent-filter>
+                           <action android:name="android.intent.action.MAIN"/>
+                           <category android:name="android.intent.category.LAUNCHER"/>
+                       </intent-filter>
+                   </activity>
+               </application>
+           </manifest>
+       ]]>
+      </manifestAdditions>
+  </android>
+</application>
