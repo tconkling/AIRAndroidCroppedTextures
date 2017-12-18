@@ -55,7 +55,7 @@ private static function compareAlpha (src :BitmapData, dst :BitmapData) :Boolean
     for (var yy :uint = 0; yy < src.height; ++yy) {
         for (var xx :uint = 0; xx < src.width; ++xx) {
             var srcPx :uint = src.getPixel32(xx, yy);
-            var dstPx :uint = src.getPixel32(xx, yy);
+            var dstPx :uint = dst.getPixel32(xx, yy);
             if (Color.getAlpha(srcPx) != 0 && srcPx != dstPx) {
                 return false;
             }
@@ -66,7 +66,7 @@ private static function compareAlpha (src :BitmapData, dst :BitmapData) :Boolean
 }
 ```
 
-This _seems_ to fix the bug. However, the "Texture doesn't match source bitmap" warning is never emitted, which implies that there's some sort of race condition in texture creation in Android, and that executing this code prevents that race condition from triggering the error.
+This seems to work most of the time, but it is quite slow.
 
 ## Changelog:
 
