@@ -10,18 +10,16 @@ import flash.net.URLRequest;
 import react.Future;
 import react.Promise;
 
-import starling.textures.Texture;
-
-public class TextureLoader {
+public class BitmapLoader {
     public static function load (url :String) :Future {
-        return new TextureLoader(url).begin();
+        return new BitmapLoader(url).begin();
     }
 
-    public function TextureLoader (url :String) {
+    public function BitmapLoader (url :String) {
         _url = url;
     }
 
-    /** @return Future<Texture>. Valid before `begin()` has been called. */
+    /** @return Future<BitmapData>. Valid before `begin()` has been called. */
     public function get result () :Future {
         return _result;
     }
@@ -49,8 +47,7 @@ public class TextureLoader {
     }
 
     protected function onBitmapLoaded (bmd :BitmapData) :void {
-        var tex :Texture = Texture.fromBitmapData(bmd, false, false);
-        _result.succeed(tex);
+        _result.succeed(bmd);
     }
 
     protected function onErrorEvent (e :Event) :void {

@@ -1,108 +1,102 @@
 package {
 
+import flash.display.BitmapData;
 import flash.filesystem.File;
+import flash.geom.Rectangle;
 
 import react.Future;
 
 import starling.core.Starling;
 import starling.display.Image;
 import starling.display.Sprite;
-import starling.events.Touch;
-import starling.events.TouchEvent;
-import starling.events.TouchPhase;
+import starling.text.TextField;
+import starling.text.TextFieldAutoSize;
+import starling.text.TextFormat;
 import starling.textures.Texture;
+import starling.utils.Align;
 
-import util.TextureLoader;
+import util.BitmapLoader;
 
 public class Demo extends Sprite {
     public var resourceRoot :File = File.applicationDirectory;
 
     public function run () :void {
-        addEventListener(TouchEvent.TOUCH, function (e :TouchEvent) :void {
-            for each (var t :Touch in e.touches) {
-                if (t.phase == TouchPhase.BEGAN) {
-                    reloadTextures();
-                    return;
-                }
-            }
-        });
+        _statusText = createTextField(Starling.current.stage.stageWidth);
+        this.addChild(_statusText);
         reloadTextures();
     }
 
-    public function reloadTextures () :void {
-        if (_loading) {
-            return;
-        }
-
+    private function reloadTextures () :void {
         var paths: Array = TEX_PATHS.concat(TEX_PATHS).concat(TEX_PATHS);
+        _statusText.text = "Reloading " + paths.length + " textures (attempt " + (_numTries + 1) + ")...";
+        _numTries++;
 
-        disposeAllTextures();
         Future.sequence(paths.map(function (path :String, ..._) :Future {
-            return TextureLoader.load(getUrl(path));
+            return BitmapLoader.load(getUrl(path));
         })).onFailure(function (err :*) :void {
-            _loading = false;
-            trace("Failed to load textures: " + err);
-        }).onSuccess(function (textures :Array) :void {
-            _loading = false;
-            disposeAllTextures();
-            _loadedTextures = textures;
-            displayTextures(textures);
+            _statusText.text = "Failed to load textures:\n" + err;
+        }).onSuccess(function (bitmaps :Array) :void {
+            var hasBadBitmap: Boolean = false;
+            for each (var bitmap: BitmapData in bitmaps) {
+                var percentLoaded: Number = validateBitmap(bitmap, 2048);
+                if (percentLoaded == 1) {
+                    bitmap.dispose();
+                } else {
+                    // Scale and center the image
+                    var image: Image = new Image(Texture.fromBitmapData(bitmap));
+                    image.scale = Math.min(
+                            Starling.current.stage.stageWidth / image.width,
+                            Starling.current.stage.stageHeight / image.height);
+                    image.x = (Starling.current.stage.stageWidth - image.width) * 0.5;
+                    image.y = (Starling.current.stage.stageHeight - image.height) * 0.5;
+                    addChildAt(image, 0);
+
+                    _statusText.text =
+                        "Broken image! (" + int(percentLoaded * 100) + "% loaded)\n" +
+                        "(After " + _numTries + " attempts)";
+                    hasBadBitmap = true;
+                    break;
+                }
+            }
+
+            if (!hasBadBitmap) {
+                reloadTextures();
+            }
         });
-    }
-
-    private function disposeAllTextures () :void {
-        if (_sprite != null) {
-            _sprite.removeFromParent(true);
-            _sprite = null;
-        }
-        if (_loadedTextures != null) {
-            for each (var tex :Texture in _loadedTextures) {
-                tex.dispose();
-            }
-            _loadedTextures = null;
-        }
-    }
-
-    private function displayTextures (textures: Array) :void {
-        if (_sprite != null) {
-            _sprite.removeFromParent(true);
-            _sprite = null;
-        }
-
-        _sprite = new Sprite();
-        var x: Number = 0;
-        var y: Number = 0;
-        for (var ii :int = 0; ii < textures.length; ++ii) {
-            var tex: Texture = textures[ii];
-            var image: Image = new Image(tex);
-            image.x = x;
-            image.y = y;
-            _sprite.addChild(image);
-
-            if ((ii + 1) % TEX_PATHS.length == 0) {
-                y = _sprite.height;
-                x = 0;
-            } else {
-                x += image.width;
-            }
-        }
-
-        // Scale and center the image
-        _sprite.scale = Math.min(
-            Starling.current.stage.stageWidth / _sprite.width,
-            Starling.current.stage.stageHeight / _sprite.height);
-        _sprite.x = (Starling.current.stage.stageWidth - _sprite.width) * 0.5;
-        _sprite.y = (Starling.current.stage.stageHeight - _sprite.height) * 0.5;
-        addChild(_sprite);
     }
 
     private function getUrl (path :String) :String {
         return this.resourceRoot.resolvePath(path).url;
     }
 
-    private var _loading :Boolean;
-    private var _loadedTextures :Array;
-    private var _sprite: Sprite;
+    private static function validateBitmap (bitmapData :BitmapData, expectedBottomRow: uint) :Number {
+        var bottomRow :Number = getBottomPixelRow(bitmapData);
+        if (expectedBottomRow - bottomRow >= 1) {
+            return (bottomRow / expectedBottomRow);
+        } else {
+            return 1;
+        }
+    }
+
+    private static function getBottomPixelRow (bitmapData :BitmapData) :Number {
+        var bounds :Rectangle = bitmapData.transparent ?
+                bitmapData.getColorBoundsRect(0xFF000000, 0x0, false) :
+                bitmapData.getColorBoundsRect(0xFFFFFFFF, 0x0, false);
+        return bounds.bottom;
+    }
+
+    private static function createTextField (width: Number): TextField {
+        var format: TextFormat = new TextFormat();
+        format.color = 0xffffff;
+        format.size = 20;
+        format.horizontalAlign = Align.CENTER;
+        var tf: TextField = new TextField(width, 100, "", format);
+        tf.autoSize = TextFieldAutoSize.VERTICAL;
+        return tf;
+    }
+
+    private var _statusText: TextField;
+    private var _numTries: int;
 
     private static const TEX_PATHS :Array = [
         "tex1.png",
