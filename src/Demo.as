@@ -21,15 +21,15 @@ public class Demo extends Sprite {
         addEventListener(TouchEvent.TOUCH, function (e :TouchEvent) :void {
             for each (var t :Touch in e.touches) {
                 if (t.phase == TouchPhase.BEGAN) {
-                    loadNextTexture();
+                    reloadTextures();
                     return;
                 }
             }
         });
-        loadNextTexture();
+        reloadTextures();
     }
 
-    public function loadNextTexture () :void {
+    public function reloadTextures () :void {
         if (_loading) {
             return;
         }
@@ -44,15 +44,14 @@ public class Demo extends Sprite {
             _loading = false;
             disposeAllTextures();
             _loadedTextures = textures;
-            displayTexture(textures[_texIndex]);
-            _texIndex = (_texIndex + 1) % TEX_PATHS.length;
+            displayTextures(textures);
         });
     }
 
     private function disposeAllTextures () :void {
-        if (_curImage != null) {
-            _curImage.removeFromParent(true);
-            _curImage = null;
+        if (_sprite != null) {
+            _sprite.removeFromParent(true);
+            _sprite = null;
         }
         if (_loadedTextures != null) {
             for each (var tex :Texture in _loadedTextures) {
@@ -62,21 +61,28 @@ public class Demo extends Sprite {
         }
     }
 
-    private function displayTexture (tex :Texture) :void {
-        if (_curImage != null) {
-            _curImage.removeFromParent(true);
-            _curImage = null;
+    private function displayTextures (textures: Array) :void {
+        if (_sprite != null) {
+            _sprite.removeFromParent(true);
+            _sprite = null;
         }
 
-        _curImage = new Image(tex);
+        _sprite = new Sprite();
+        var x: Number = 0;
+        for each (var tex: Texture in textures) {
+            var image: Image = new Image(tex);
+            image.x = x;
+            _sprite.addChild(image);
+            x += image.width;
+        }
 
         // Scale and center the image
-        _curImage.scale = Math.min(
-            Starling.current.stage.stageWidth / _curImage.width,
-            Starling.current.stage.stageHeight / _curImage.height);
-        _curImage.x = (Starling.current.stage.stageWidth - _curImage.width) * 0.5;
-        _curImage.y = (Starling.current.stage.stageHeight - _curImage.height) * 0.5;
-        addChild(_curImage);
+        _sprite.scale = Math.min(
+            Starling.current.stage.stageWidth / _sprite.width,
+            Starling.current.stage.stageHeight / _sprite.height);
+        _sprite.x = (Starling.current.stage.stageWidth - _sprite.width) * 0.5;
+        _sprite.y = (Starling.current.stage.stageHeight - _sprite.height) * 0.5;
+        addChild(_sprite);
     }
 
     private function getUrl (path :String) :String {
@@ -84,9 +90,8 @@ public class Demo extends Sprite {
     }
 
     private var _loading :Boolean;
-    private var _texIndex :int = 0;
     private var _loadedTextures :Array;
-    private var _curImage :Image;
+    private var _sprite: Sprite;
 
     private static const TEX_PATHS :Array = [
         "tex1.png",
