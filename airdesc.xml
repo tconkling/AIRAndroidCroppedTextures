@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<application xmlns="http://ns.adobe.com/air/application/26.0">
+<application xmlns="http://ns.adobe.com/air/application/30.0">
   <id>com.timconkling.AIRAndroidCroppedTextures</id>
   <filename>AIRAndroidCroppedTextures</filename>
   <name>AIRAndroidCroppedTextures</name>

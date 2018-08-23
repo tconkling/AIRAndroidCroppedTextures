@@ -1,5 +1,11 @@
 # AIRAndroidCroppedTextures
 
+## Fixed?
+
+The bug seems to be fixed as of AIR 30!
+
+## Previously
+
 This demonstrates an error in AIR for Android. Periodically, textures will be arbitrarily cropped.
 
 * [Adobe bug tracker issue](https://tracker.adobe.com/#/view/AIR-4198475)
