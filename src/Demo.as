@@ -34,8 +34,10 @@ public class Demo extends Sprite {
             return;
         }
 
+        var paths: Array = TEX_PATHS.concat(TEX_PATHS).concat(TEX_PATHS);
+
         disposeAllTextures();
-        Future.sequence(TEX_PATHS.map(function (path :String, ..._) :Future {
+        Future.sequence(paths.map(function (path :String, ..._) :Future {
             return TextureLoader.load(getUrl(path));
         })).onFailure(function (err :*) :void {
             _loading = false;
@@ -69,11 +71,20 @@ public class Demo extends Sprite {
 
         _sprite = new Sprite();
         var x: Number = 0;
-        for each (var tex: Texture in textures) {
+        var y: Number = 0;
+        for (var ii :int = 0; ii < textures.length; ++ii) {
+            var tex: Texture = textures[ii];
             var image: Image = new Image(tex);
             image.x = x;
+            image.y = y;
             _sprite.addChild(image);
-            x += image.width;
+
+            if ((ii + 1) % TEX_PATHS.length == 0) {
+                y = _sprite.height;
+                x = 0;
+            } else {
+                x += image.width;
+            }
         }
 
         // Scale and center the image
